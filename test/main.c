@@ -4,8 +4,8 @@
 #include <semaphore.h>
 #include <unistd.h>
 
-#define N_CLIENTS 10
-#define N_TABLE 4
+#define N_CLIENTS 30
+#define N_TABLE 20
 
 sem_t sem_table;
 sem_t sem_waiter;
