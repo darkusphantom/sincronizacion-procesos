@@ -2,6 +2,7 @@
 #define CASH_REGISTER_H
 
 #include <pthread.h>
+#include "sem.h"
 
 // Función que representa el cuerpo del hilo de la caja
 void *cash_register_thread(void *arg)

@@ -9,6 +9,7 @@ const int MAX_SUPERVISORS = 10;
 typedef struct SupervisorData
 {
     int id;
+    int order_by_turn;
     // Otros datos necesarios para el hilo de un mesonero
 } supervisor_data_t;
 
