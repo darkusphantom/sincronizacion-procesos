@@ -5,18 +5,8 @@
 #include <unistd.h>
 #include "mesonero.h"
 
-#define N_MESONEROS 10
-#define N_MESAS 20
-
-// Definición de la estructura Mesonero
-typedef struct
-{
-    int id;
-} Mesonero;
-
-Mesonero waiter[N_MESONEROS];       // Array con los mesoneros disponibles
-pthread_t waiter_t[N_MESONEROS]; // Array con los hilos correspondientes a cada mesonero
-// sem_t semaforosMesas[N_MESAS];
+// Array con los mesoneros disponibles
+pthread_t waiter_t[N_WAITER]; // Array con los hilos correspondientes a cada mesonero
 
 // Función principal que inicializa los mesoneros y los hilos correspondientes
 int main()
@@ -36,7 +26,7 @@ int main()
     }
 
     // Esperar a que los hilos terminen (esto no debería ocurrir nunca en este ejemplo)
-    for (int i = 0; i < N_MESONEROS; i++)
+    for (int i = 0; i < N_WAITER; i++)
     {
         pthread_join(waiter_t[i], NULL);
     }
