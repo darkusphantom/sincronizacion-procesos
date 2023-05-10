@@ -4,6 +4,10 @@
 #include <semaphore.h>
 #include <unistd.h>
 
+#define MAX_WAITER 10
+#define MAX_SUPERVISOR 2
+#define MAX_TABLE 20
+
 // Definición de la estructura Order
 typedef struct
 {
@@ -31,14 +35,14 @@ typedef struct
 // Definición de variables globales
 Order orders[100];                                         // Array con los pedidos del restaurante
 int numOrders = 0;                                         // Número de pedidos registrados
-Waiter waiter[10];                                         // Array con los mesoneros del turno
-Supervisor supervisor[2];                                  // Array con los supervisores
+Waiter waiter[MAX_WAITER];                                 // Array con los mesoneros del turno
+Supervisor supervisor[MAX_SUPERVISOR];                     // Array con los supervisores
 pthread_mutex_t mutex_orders = PTHREAD_MUTEX_INITIALIZER;  // Mutex para proteger la variable numOrders
 pthread_mutex_t mutex_cashbox = PTHREAD_MUTEX_INITIALIZER; // Mutex para proteger el área de caja
-pthread_t tid[10];                                         // Array con los hilos correspondientes a los mesoneros
-pthread_t sup_tid[2];                                      // Array con los hilos correspondientes a los supervisores
+pthread_t tid[MAX_WAITER];                                 // Array con los hilos correspondientes a los mesoneros
+pthread_t sup_tid[MAX_SUPERVISOR];                         // Array con los hilos correspondientes a los supervisores
 pthread_t cashier_tid;                                     // Hilo correspondiente al cajero
-sem_t sem_table[20];                                       // Array de semáforos correspondientes a las mesas
+sem_t sem_table[MAX_TABLE];                                // Array de semáforos correspondientes a las mesas
 sem_t sem_cashier;                                         // Semáforo correspondiente al cajero
 sem_t sem_rest;                                            // Semáforo correspondiente a los descansos
 // Función que registra un nuevo pedido
@@ -138,35 +142,64 @@ void *mesoneroFuncion(void *arg)
     }
 }
 
+void *generarPedidosFuncion(void *arg)
+{
+    int mesa;
+    int i = 0;
+    while (1)
+    {
+        // Generar un pedido aleatorio
+        mesa = rand() % 20 + 1;
+        int mesonero = rand() % 10;
+        registrarPedido(mesa, mesonero);
+
+        // Esperar un tiempo aleatorio antes de generar el siguiente pedido
+        int espera = rand() % 5 + 1;
+        sleep(espera);
+
+        i++;
+        if (i % 10 == 0)
+        {
+            // Si se han generado 10 pedidos, imprimir un mensaje de aviso
+            printf("Se han generado 10 pedidos.\n");
+        }
+    }
+}
+
 int main()
 {
     // Inicializar los semáforos
     sem_init(&sem_cashier, 0, 1);
     sem_init(&sem_rest, 0, 1);
-    for (int i = 0; i < 20; i++)
+    for (int i = 0; i < MAX_TABLE; i++)
         sem_init(&sem_table[i], 0, 1);
 
     // Crear los hilos de los supervisores
     int sup_ids[2] = {0, 1};
-    for (int i = 0; i < 2; i++)
+    for (int i = 0; i < MAX_SUPERVISOR; i++)
+    {
         pthread_create(&sup_tid[i], NULL, supervisorFuncion, &sup_ids[i]);
+    }
 
     // Crear los hilos de los mesoneros
-    int waiter_ids[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-    for (int i = 0; i < 10; i++)
+    int waiter_ids[MAX_WAITER] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    for (int i = 0; i < MAX_WAITER; i++)
         pthread_create(&tid[i], NULL, mesoneroFuncion, &waiter_ids[i]);
 
     // Simular la llegada de clientes a las mesas del restaurante
-    // ...
+    // Crear el hilo de generación de pedidos
+    pthread_t gen_tid;
+    pthread_create(&gen_tid, NULL, generarPedidosFuncion, NULL);
 
     // Mostrar resultados
     printf("Resultados del turno:\n");
-    for (int i = 0; i < 2; i++)
+    for (int i = 0; i < MAX_SUPERVISOR; i++)
+    {
         printf("Supervisor %d: %d pedidos contabilizados.\n", i, supervisor[i].total_orders);
-
+    }
     // Obtener el turno y mesonero con mayor número de pedidos
     int max_orders = 0, max_waiter;
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < MAX_WAITER; i++)
     {
         if (waiter[i].total_orders > max_orders)
         {
@@ -177,7 +210,7 @@ int main()
     int total_orders = waiter[max_waiter].total_orders;
     int orders_claimed = waiter[max_waiter].orders_claimed;
     int total_waiter_rests = waiter[max_waiter].rests;
-    // printf("Mesonero %d del turno %d: ", max_waiter, max_turn, waiter[max_waiter].total_orders);
-    printf("Mesonero %d del turno %d: ", max_waiter, 5);
+    printf("Mesonero %d del turno %d: ", max_waiter, max_turn, waiter[max_waiter].total_orders);
+    // printf("Mesonero %d del turno %d: ", max_waiter, 5);
     printf("%d pedidos atendidos, %d pedidos cobrados y % d descansos.\n", total_orders, orders_claimed, total_waiter_rests);
 }
