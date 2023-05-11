@@ -76,6 +76,7 @@ void *supervisorFuncion(void *arg)
 
         // Dar por terminado el descanso del mesonero
         sem_post(&sem_rest);
+        sleep(3);
     }
 }
 
@@ -139,6 +140,7 @@ void *mesoneroFuncion(void *arg)
         // Liberar la mesa y la caja
         sem_post(&sem_table[id]);
         sem_post(&sem_cashier);
+        sleep(3);
     }
 }
 
@@ -166,13 +168,24 @@ void *generarPedidosFuncion(void *arg)
     }
 }
 
+void showResults(int id_waiter)
+{
+    int total_orders = waiter[id_waiter].total_orders;
+    int orders_claimed = waiter[id_waiter].orders_claimed;
+    int total_waiter_rests = waiter[id_waiter].rests;
+    printf("Mesonero %d: ", id_waiter);
+    printf("%d pedidos atendidos, %d pedidos cobrados y % d descansos.\n", total_orders, orders_claimed, total_waiter_rests);
+}
+
 int main()
 {
     // Inicializar los semáforos
     sem_init(&sem_cashier, 0, 1);
     sem_init(&sem_rest, 0, 1);
     for (int i = 0; i < MAX_TABLE; i++)
+    {
         sem_init(&sem_table[i], 0, 1);
+    }
 
     // Crear los hilos de los supervisores
     int sup_ids[2] = {0, 1};
@@ -184,7 +197,9 @@ int main()
     // Crear los hilos de los mesoneros
     int waiter_ids[MAX_WAITER] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
     for (int i = 0; i < MAX_WAITER; i++)
+    {
         pthread_create(&tid[i], NULL, mesoneroFuncion, &waiter_ids[i]);
+    }
 
     // Simular la llegada de clientes a las mesas del restaurante
     // Crear el hilo de generación de pedidos
@@ -205,12 +220,7 @@ int main()
         {
             max_orders = waiter[i].total_orders;
             max_waiter = i;
+            showResults(max_waiter);
         }
     }
-    int total_orders = waiter[max_waiter].total_orders;
-    int orders_claimed = waiter[max_waiter].orders_claimed;
-    int total_waiter_rests = waiter[max_waiter].rests;
-    printf("Mesonero %d del turno %d: ", max_waiter, max_turn, waiter[max_waiter].total_orders);
-    // printf("Mesonero %d del turno %d: ", max_waiter, 5);
-    printf("%d pedidos atendidos, %d pedidos cobrados y % d descansos.\n", total_orders, orders_claimed, total_waiter_rests);
 }
