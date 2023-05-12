@@ -3,48 +3,10 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <unistd.h>
+#include "struct.h"
+#include "define.h"
+#include "const.h"
 
-#define MAX_WAITER 10
-#define MAX_SUPERVISOR 2
-#define MAX_TABLE 20
-
-// Definición de la estructura Order
-typedef struct
-{
-    int id_table;  // Número de mesa del pedido
-    int waiter_id; // ID del mesonero que atendió el pedido
-} Order;
-
-// Definición de la estructura Waiter
-typedef struct
-{
-    int id;
-    int total_orders;   // Número total de pedidos atendidos
-    int orders_claimed; // Número de pedidos cobrado
-    int in_cashbox;     // Indica si el mesonero está en el área de caja (1 = Sí, 0 = No)
-    int rests;          // Número de descansos
-} Waiter;
-
-// Definición de la estructura Supervisor
-typedef struct
-{
-    int id;
-    int total_orders; // Número total de pedidos contabilizados
-} Supervisor;
-
-// Definición de variables globales
-Order orders[100];                                         // Array con los pedidos del restaurante
-int numOrders = 0;                                         // Número de pedidos registrados
-Waiter waiter[MAX_WAITER];                                 // Array con los mesoneros del turno
-Supervisor supervisor[MAX_SUPERVISOR];                     // Array con los supervisores
-pthread_mutex_t mutex_orders = PTHREAD_MUTEX_INITIALIZER;  // Mutex para proteger la variable numOrders
-pthread_mutex_t mutex_cashbox = PTHREAD_MUTEX_INITIALIZER; // Mutex para proteger el área de caja
-pthread_t tid[MAX_WAITER];                                 // Array con los hilos correspondientes a los mesoneros
-pthread_t sup_tid[MAX_SUPERVISOR];                         // Array con los hilos correspondientes a los supervisores
-pthread_t cashier_tid;                                     // Hilo correspondiente al cajero
-sem_t sem_table[MAX_TABLE];                                // Array de semáforos correspondientes a las mesas
-sem_t sem_cashier;                                         // Semáforo correspondiente al cajero
-sem_t sem_rest;                                            // Semáforo correspondiente a los descansos
 // Función que registra un nuevo pedido
 void registrarPedido(int numMesa, int id_waiter)
 {
@@ -129,7 +91,7 @@ void *mesoneroFuncion(void *arg)
         }
 
         // Si el mesonero ha cobrado 10 pedidos, solicitar un descanso
-        if (waiter[id].orders_claimed % 10 == 0)
+        if (waiter[id].orders_claimed % MAX_ORDERS == 0)
         {
             printf("Mesonero %d: Solicitando un descanso.\n", id);
             sem_post(&sem_rest);
@@ -151,8 +113,8 @@ void *generarPedidosFuncion(void *arg)
     while (1)
     {
         // Generar un pedido aleatorio
-        mesa = rand() % 20 + 1;
-        int mesonero = rand() % 10;
+        mesa = rand() % MAX_TABLE + 1;
+        int mesonero = rand() % MAX_WAITER;
         registrarPedido(mesa, mesonero);
 
         // Esperar un tiempo aleatorio antes de generar el siguiente pedido
@@ -160,7 +122,7 @@ void *generarPedidosFuncion(void *arg)
         sleep(espera);
 
         i++;
-        if (i % 10 == 0)
+        if (i % MAX_ORDERS == 0)
         {
             // Si se han generado 10 pedidos, imprimir un mensaje de aviso
             printf("Se han generado 10 pedidos.\n");
@@ -188,7 +150,7 @@ int main()
     }
 
     // Crear los hilos de los supervisores
-    int sup_ids[2] = {0, 1};
+    int sup_ids[MAX_SUPERVISOR] = {0, 1};
     for (int i = 0; i < MAX_SUPERVISOR; i++)
     {
         pthread_create(&sup_tid[i], NULL, supervisorFuncion, &sup_ids[i]);
