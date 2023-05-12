@@ -3,9 +3,49 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <unistd.h>
-#include "struct.h"
-#include "define.h"
-#include "const.h"
+
+#define MAX_WAITER 10
+#define MAX_SUPERVISOR 2
+#define MAX_TABLE 20
+#define MAX_ORDERS 10
+
+// Definición de la estructura Order
+typedef struct
+{
+    int id_table;  // Número de mesa del pedido
+    int waiter_id; // ID del mesonero que atendió el pedido
+} Order;
+
+// Definición de la estructura Waiter
+typedef struct
+{
+    int id;
+    int total_orders;   // Número total de pedidos atendidos
+    int orders_claimed; // Número de pedidos cobrado
+    int in_cashbox;     // Indica si el mesonero está en el área de caja (1 = Sí, 0 = No)
+    int rests;          // Número de descansos
+} Waiter;
+
+// Definición de la estructura Supervisor
+typedef struct
+{
+    int id;
+    int total_orders; // Número total de pedidos contabilizados
+} Supervisor;
+
+// Definición de variables globales
+Order orders[100];                                         // Array con los pedidos del restaurante
+int numOrders = 0;                                         // Número de pedidos registrados
+Waiter waiter[MAX_WAITER];                                 // Array con los mesoneros del turno
+Supervisor supervisor[MAX_SUPERVISOR];                     // Array con los supervisores
+pthread_mutex_t mutex_orders = PTHREAD_MUTEX_INITIALIZER;  // Mutex para proteger la variable numOrders
+pthread_mutex_t mutex_cashbox = PTHREAD_MUTEX_INITIALIZER; // Mutex para proteger el área de caja
+pthread_t tid[MAX_WAITER];                                 // Array con los hilos correspondientes a los mesoneros
+pthread_t sup_tid[MAX_SUPERVISOR];                         // Array con los hilos correspondientes a los supervisores
+pthread_t cashier_tid;                                     // Hilo correspondiente al cajero
+sem_t sem_table[MAX_TABLE];                                // Array de semáforos correspondientes a las mesas
+sem_t sem_cashier;                                         // Semáforo correspondiente al cajero
+sem_t sem_rest;
 
 // Función que registra un nuevo pedido
 void registrarPedido(int numMesa, int id_waiter)
@@ -95,7 +135,7 @@ void *mesoneroFuncion(void *arg)
         {
             printf("Mesonero %d: Solicitando un descanso.\n", id);
             sem_post(&sem_rest);
-            waiter[id].total_rests++;
+            waiter[id].rests++;
             waiter[id].orders_claimed = 0; // Reiniciar el conteo de pedidos cobrado
         }
 
@@ -134,7 +174,7 @@ void showResults(int id_waiter)
 {
     int total_orders = waiter[id_waiter].total_orders;
     int orders_claimed = waiter[id_waiter].orders_claimed;
-    int total_waiter_rests = waiter[id_waiter].total_rests;
+    int total_waiter_rests = waiter[id_waiter].rests;
     printf("Mesonero %d: ", id_waiter);
     printf("%d pedidos atendidos, %d pedidos cobrados y % d descansos.\n", total_orders, orders_claimed, total_waiter_rests);
 }
