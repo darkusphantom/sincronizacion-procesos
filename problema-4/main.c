@@ -185,4 +185,6 @@ int main()
             showResults(max_waiter);
         }
     }
+
+    return 0;
 }

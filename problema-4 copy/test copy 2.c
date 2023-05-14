@@ -38,6 +38,11 @@ struct supervisor_stats supervisor_stats_turno_nocturno;
 struct mesonero_stats mesonero_stats[MAX_MESONEROS];
 
 int current_turn = 0;
+int total_pedidos_turno_diurno = 0;
+int total_pedidos_turno_nocturno = 0;
+int mesonero_turno_max_pedidos = 0;
+int mesonero_turno_max_cobros = 0;
+int total_cobros_en_caja = 0;
 
 void *mesonero(void *arg)
 {
@@ -94,99 +99,103 @@ void *mesonero(void *arg)
         {
             mesonero_stats[mesonero_id].total_descansos = descansos_mesonero_actual;
         }
+
+        // Descansar si es necesario
+        if (descansos_mesonero_actual == 2)
+        {
+            printf("Mesonero %d se va a descansar\n", mesonero_id);
+            // Ir a descansar
+            // ...
+            descansos_mesonero_actual = 0;
+        }
     }
 }
 
 void *supervisor(void *arg)
 {
     int supervisor_id = *(int *)arg;
-    int mesonero_id = 0;
-    int total_pedidos_turno_diurno = 0;
-    int total_pedidos_turno_nocturno = 0;
+    int turno_actual = 0;
+    int total_pedidos_supervisor = 0;
 
     while (1)
     {
-        // Esperar a que un mesonero avise
+        // Llenar planilla
         sem_wait(&planilla);
         printf("Supervisor %d llenando planilla\n", supervisor_id);
-        // Llenar la planilla con el número de mesonero
+        // Llenar planilla
         // ...
         sem_post(&planilla);
-        // Incrementar el total de pedidos contabilizados en el turno actual
-        if (current_turn == 0)
-        {
-            supervisor_stats_turno_diurno.total_pedidos++;
-            total_pedidos_turno_diurno++;
-        }
-        else
-        {
-            supervisor_stats_turno_nocturno.total_pedidos++;
-            total_pedidos_turno_nocturno++;
-        }
-        // Esperar un tiempo para el cambio de turno
+        // Esperar cambio de turno
+        sem_wait(&planilla);
         printf("Supervisor %d esperando cambio de turno\n", supervisor_id);
-        sleep(10);
-        // Cambiar de turno
-        current_turn = (current_turn + 1) % 2;
-        printf("Supervisor %d cambia de turno a %d\n", supervisor_id, current_turn);
-        // Imprimir estadísticas del turno anterior
-        if (current_turn == 0)
+        // Esperar cambio de turno
+        // ...
+        sem_post(&planilla);
+        // Cambiar de turno si es necesario
+        if (current_turn == 0 && supervisor_id == 0)
         {
-            printf("Turno diurno:\n");
-            printf("Total de pedidos por supervisor: %d\n", supervisor_stats_turno_diurno.total_pedidos);
-            printf("Total de pedidos por mesonero:\n");
-            for (int i = 0; i < MAX_MESONEROS; i++)
-            {
-                printf("Mesonero %d: %d\n", i, mesonero_stats[i].total_pedidos);
-            }
+            current_turn = 1;
+            supervisor_stats_turno_diurno.turno = 1;
+            supervisor_stats_turno_diurno.total_pedidos = total_pedidos_turno_diurno;
+            total_pedidos_turno_diurno = 0;
+        }
+        else if (current_turn == 1 && supervisor_id == 1)
+        {
+            current_turn = 0;
+            supervisor_stats_turno_nocturno.turno = 0;
+            supervisor_stats_turno_nocturno.total_pedidos = total_pedidos_turno_nocturno;
+            total_pedidos_turno_nocturno = 0;
+        }
+        // Actualizar estadísticas de pedidos por supervisor
+        if (supervisor_id == 0)
+        {
+            total_pedidos_supervisor = supervisor_stats_turno_diurno.total_pedidos;
         }
         else
         {
-            printf("Turno nocturno:\n");
-            printf("Total de pedidos por supervisor: %d\n", supervisor_stats_turno_nocturno.total_pedidos);
-            printf("Total de pedidos por mesonero:\n");
-            for (int i = 0; i < MAX_MESONEROS; i++)
-            {
-                printf("Mesonero %d: %d\n", i, mesonero_stats[i].total_pedidos);
-            }
+            total_pedidos_supervisor = supervisor_stats_turno_nocturno.total_pedidos;
         }
-        // Actualizar estadísticas de mesoneros
-        for (int i = 0; i < MAX_MESONEROS; i++)
-        {
-            mesonero_stats[i].total_cobros += cobros_en_caja[i];
-            mesonero_stats[i].total_pedidos += pedidos_atendidos[i];
-            cobros_en_caja[i] = 0;
-            pedidos_atendidos[i] = 0;
-        }
-        // Imprimir estadísticas generales
-        printf("Total de pedidos: %d\n", total_pedidos_atendidos);
-        printf("Número de descansos por mesonero:\n");
-        for (int i = 0; i < MAX_MESONEROS; i++)
-        {
-            printf("Mesonero %d: %d\n", i, mesonero_stats[i].total_descansos);
-            mesonero_stats[i].total_descansos = 0;
-        }
+        printf("Turno %s:\n", current_turn == 0 ? "nocturno" : "diurno");
+        printf("Total de pedidos por supervisor %d: %d\n", supervisor_id, total_pedidos_supervisor);
+        // Dormir un segundo antes de volver a comenzar el ciclo
+        sleep(1);
     }
 }
 
 int main()
 {
+    int i;
+    int mesonero_ids[MAX_MESONEROS];
+    int supervisor_ids[2];
+
+    // Inicializar semáforos
     sem_init(&caja, 0, MAX_CAJA);
     sem_init(&planilla, 0, MAX_PLANILLA);
     sem_init(&taquilla, 0, 0);
 
-    int mesonero_ids[MAX_MESONEROS];
-    for (int i = 0; i < MAX_MESONEROS; i++)
+    // Crear hilos de mesoneros
+    for (i = 0; i < MAX_MESONEROS; i++)
     {
         mesonero_ids[i] = i;
         pthread_create(&mesoneros[i], NULL, mesonero, &mesonero_ids[i]);
     }
 
-    int supervisor_ids[2] = {0, 1};
-    pthread_create(&supervisores[0], NULL, supervisor, &supervisor_ids[0]);
-    pthread_create(&supervisores[1], NULL, supervisor, &supervisor_ids[1]);
+    // Crear hilos de supervisores
+    for (i = 0; i < 2; i++)
+    {
+        supervisor_ids[i] = i;
+        pthread_create(&supervisores[i], NULL, supervisor, &supervisor_ids[i]);
+    }
 
-    pthread_join(supervisores[0], NULL);
+    // Esperar a que los hilos terminen (esto nunca sucederá)
+    for (i = 0; i < MAX_MESONEROS; i++)
+    {
+        pthread_join(mesoneros[i], NULL);
+    }
+    for (i = 0; i < 2; i++)
+    {
+        pthread_join(supervisores[i], NULL);
+    }
 
     return 0;
 }

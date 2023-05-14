@@ -1,188 +1,194 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <pthread.h>
 #include <semaphore.h>
-#include <unistd.h>
-#include "struct.h"
-#include "define.h"
+#include "global.h"
 #include "const.h"
 
-// Función que registra un nuevo pedido
-void registrarPedido(int numMesa, int id_waiter)
+sem_t mutex;       // Semáforo binario para controlar el acceso a las variables compartidas
+sem_t mesonero;    // Semáforo binario para que el mesonero espere a que llegue un cliente
+sem_t cliente;     // Semáforo binario para que el cliente espere a que el mesonero lo atienda
+sem_t taquilla;    // Semáforo binario para la taquilla
+sem_t planilla;    // Semaforo para Planilla del supervisor para registrar cobros
+sem_t caja;        // Semaforo para Caja de cobro
+sem_t waiter_rest; // Semaforo para el descanso del mesonero
+
+int mesas_disponibles = MAX_TABLE;  // Número de mesas disponibles
+int pedidos_atendidos_mesonero = 0; // Número de pedidos atendidos por el mesonero
+int cobros_en_caja_mesonero = 0;    // Número de cobros realizados por el mesonero
+int descansos_mesonero_actual = 0;  // Número de descansos que ha tomado el mesonero en este momento
+int caja_disponible = 0;            // Bandera que indica si la caja está disponible
+int total_pedidos_atendidos = 0;    // Numero de pedidos en total
+int en_descanso = 0;                // Bandera que indica si el mesonero esta en descanso
+
+void descanso_func(int id_waiter)
 {
-    pthread_mutex_lock(&mutex_orders);
-    orders[numOrders].id_table = numMesa;
-    orders[numOrders].waiter_id = id_waiter;
-    numOrders++;
-    pthread_mutex_unlock(&mutex_orders);
+     if (en_descanso)
+     {
+          sleep(2);
+          en_descanso = 0;
+     }
+     return NULL;
 }
 
-// Función que representa el hilo de los supervisores
-void *supervisorFuncion(void *arg)
+void *mesonero_func(void *arg)
 {
-    int id = *(int *)arg;
-    while (1)
-    {
-        // Esperar a que un mesonero solicite un descanso
-        sem_wait(&sem_rest);
+     // int waiter_id = *(int *)arg;
+     int waiter_id = 0;
+     int available_cash_box = 1;
 
-        // Tomar los datos del mesonero que solicita el descanso
-        pthread_mutex_lock(&mutex_orders);
-        int waiter_id = orders[numOrders - 1].waiter_id;
-        pthread_mutex_unlock(&mutex_orders);
+     while (available_cash_box)
+     {
+          // Esperar a que llegue un cliente
+          sem_wait(&cliente);
+          // Tomar el mutex para acceder a las variables compartidas
+          sem_wait(&mutex);
+          // Incrementar el número de mesas disponibles
+          mesas_disponibles++;
+          // Liberar el mutex
+          sem_post(&mutex);
+          // Despertar al cliente
+          sem_post(&mesonero);
+          // Atender al cliente en la mesa
+          printf("El mesonero está atendiendo al cliente en la mesa\n");
+          printf("El mesonero terminó de atender al cliente en la mesa\n");
+          // Registrar pedido en la pantalla
+          // ...
+          printf("El mesonero esta registrando el pedido en pantalla\n");
+          // Esperar a que el pedido esté listo en la taquilla
+          sem_wait(&taquilla);
+          printf("Mesonero %d llevando pedido a la mesa\n", waiter_id);
+          // Llevar el pedido a la mesa
+          // ...
+          // Cobrar en la caja
+          sem_wait(&caja);
+          caja_disponible = 1;
+          while (caja_disponible)
+          {
+               if (cobros_en_caja_mesonero < 10)
+               {
+                    printf("Mesonero %d cobrando en caja\n", waiter_id);
+                    sleep(2);
+                    // Cobrar en la caja
+                    // ...
+                    // Incrementar el contador de pedidos atendidos y cobros en caja
+                    pedidos_atendidos_mesonero++;
+                    cobros_en_caja_mesonero++;
+                    total_pedidos_atendidos++;
+                    //      // Avisar a un supervisor cada 10 pedidos
+                    //      if (cobros_en_caja_mesonero % 10 == 0)
+                    //      {
+                    //           sem_wait(&planilla);
+                    //           printf("Mesonero %d avisa al supervisor\n", waiter_id);
+                    //           // Avisar al supervisor
+                    //           // ...
+                    //           sem_post(&planilla);
+                    //           // Incrementar el contador de descansos
+                    //           descansos_mesonero_actual++;
+                    //      }
+               }
+               else
+               {
+                    // Muestra el total de pedidos y cobros en la ronda antes del descanso
+                    printf("Pedidos atendidos del mesonero %d: %d\n", waiter_id, pedidos_atendidos_mesonero);
+                    printf("Cobros en caja del mesonero %d: %d\n", waiter_id, cobros_en_caja_mesonero);
+                    printf("Total de pedidos atendidos en este turno: %d\n", cobros_en_caja_mesonero);
 
-        // Contabilizar los pedidos atendidos por el mesonero en el turno
-        supervisor[id].total_orders += waiter[waiter_id].total_orders;
-        printf("Supervisor %d: Mesonero %d ha atendido %d pedidos.\n", id, waiter_id, waiter[waiter_id].total_orders);
-        waiter[waiter_id].total_orders = 0; // Reiniciar el conteo de pedidos
+                    // Si ya se han cobrado 10 pedidos, el mesonero debe tomar un descanso
+                    printf("Mesonero %d se va a tomar un descanso\n", waiter_id);
+                    // Ir a descansar
+                    // ...
+                    descanso_func(waiter_id);
+                    // Incrementar el contador de descansos
+                    descansos_mesonero_actual++;
+               }
+               // Liberar la caja
+               caja_disponible = 0;
+               sem_post(&caja);
+          }
+          // Actualizar estadísticas de descansos
+          // if (descansos_mesonero_actual > mesonero_stats[mesonero_id].total_descansos)
+          // {
+          //      mesonero_stats[mesonero_id].total_descansos = descansos_mesonero_actual;
+          // }
+          // Descansar si es necesario
+          // if (descansos_mesonero_actual == 2)
+          // {
+          //      printf("Mesonero %d se va a descansar\n", waiter_id);
+          //      // Ir a descansar
+          //      // ...
+          //      descansos_mesonero_actual = 0;
+          // }
+     }
 
-        // Dar por terminado el descanso del mesonero
-        sem_post(&sem_rest);
-        sleep(3);
-    }
+     return NULL;
 }
 
-// Función que representa el hilo de atención al cliente por parte de los mesoneros
-void *mesoneroFuncion(void *arg)
+void *cliente_func(void *arg)
 {
-    int id = *(int *)arg;
-    while (1)
-    {
-        // Esperar hasta que haya un pedido disponible en la mesa del mesonero
-        sem_wait(&sem_table[id]);
-
-        // Registrar el pedido atendido
-        waiter[id].total_orders++;
-        pthread_mutex_lock(&mutex_orders);
-        orders[numOrders].id_table = id;
-        orders[numOrders].waiter_id = id;
-        numOrders++;
-        pthread_mutex_unlock(&mutex_orders);
-
-        // Si el mesonero no está en caja, verificar si puede ir a cobrar
-        if (!waiter[id].in_cashbox && sem_trywait(&sem_cashier) == 0)
-        {
-            waiter[id].in_cashbox = 1; // El mesonero está en el área de caja
-
-            // Esperar a que la caja esté disponible
-            pthread_mutex_lock(&mutex_cashbox);
-            while (waiter[0].in_cashbox && waiter[1].in_cashbox)
-                pthread_mutex_unlock(&mutex_cashbox);
-
-            // Cobrar pedidos hasta completar 10 o hasta que no haya más pedidos
-            int orders_to_claim = 10 - waiter[id].orders_claimed;
-            for (int i = 0; i < orders_to_claim && numOrders > 0; i++)
-            {
-                // Cobrar el pedido más antiguo
-                pthread_mutex_lock(&mutex_orders);
-                Order order = orders[0];
-                printf("Mesonero %d: Cobrando el pedido de la mesa %d.\n", id, order.id_table);
-                waiter[i].orders_claimed++;
-                // Eliminar el pedido cobrado del array de pedidos
-                for (int j = 0; j < numOrders - 1; j++)
-                {
-                    orders[j] = orders[j + 1];
-                }
-                numOrders--;
-                pthread_mutex_unlock(&mutex_orders);
-            }
-            waiter[id].in_cashbox = 0; // El mesonero ya no está en el área de caja
-            pthread_mutex_unlock(&mutex_cashbox);
-        }
-
-        // Si el mesonero ha cobrado 10 pedidos, solicitar un descanso
-        if (waiter[id].orders_claimed % MAX_ORDERS == 0)
-        {
-            printf("Mesonero %d: Solicitando un descanso.\n", id);
-            sem_post(&sem_rest);
-            waiter[id].total_rests++;
-            waiter[id].orders_claimed = 0; // Reiniciar el conteo de pedidos cobrado
-        }
-
-        // Liberar la mesa y la caja
-        sem_post(&sem_table[id]);
-        sem_post(&sem_cashier);
-        sleep(3);
-    }
+     while (1)
+     {
+          // Tomar el mutex para acceder a las variables compartidas
+          sem_wait(&mutex);
+          if (mesas_disponibles > 0)
+          {
+               // Hay una mesa disponible
+               mesas_disponibles--;
+               // Liberar el mutex
+               sem_post(&mutex);
+               // Despertar al mesonero
+               sem_post(&cliente);
+               // Esperar a que el mesonero lo atienda
+               sem_wait(&mesonero);
+               // Sentarse en la mesa
+               printf("El cliente se está sentando en la mesa\n");
+               sleep(1);
+               printf("El cliente se sentó en la mesa\n");
+          }
+          else
+          {
+               // No hay mesas disponibles
+               // Liberar el mutex
+               sem_post(&mutex);
+               printf("El cliente se fue porque no había mesas disponibles\n");
+          }
+          // Esperar un tiempo aleatorio antes de llegar al siguiente cliente
+          sleep(rand() % 5 + 1);
+     }
+     return NULL;
 }
 
-void *generarPedidosFuncion(void *arg)
+// Inicializar los semáforos
+void semaphore_init()
 {
-    int mesa;
-    int i = 0;
-    while (1)
-    {
-        // Generar un pedido aleatorio
-        mesa = rand() % MAX_TABLE + 1;
-        int mesonero = rand() % MAX_WAITER;
-        registrarPedido(mesa, mesonero);
-
-        // Esperar un tiempo aleatorio antes de generar el siguiente pedido
-        int espera = rand() % 5 + 1;
-        sleep(espera);
-
-        i++;
-        if (i % MAX_ORDERS == 0)
-        {
-            // Si se han generado 10 pedidos, imprimir un mensaje de aviso
-            printf("Se han generado 10 pedidos.\n");
-        }
-    }
+     sem_init(&mutex, 0, 1);
+     sem_init(&mesonero, 0, 0);
+     sem_init(&cliente, 0, 0);
 }
 
-void showResults(int id_waiter)
+// Destruir los semáforos
+void semaphore_destroy()
 {
-    int total_orders = waiter[id_waiter].total_orders;
-    int orders_claimed = waiter[id_waiter].orders_claimed;
-    int total_waiter_rests = waiter[id_waiter].total_rests;
-    printf("Mesonero %d: ", id_waiter);
-    printf("%d pedidos atendidos, %d pedidos cobrados y % d descansos.\n", total_orders, orders_claimed, total_waiter_rests);
+     sem_destroy(&mutex);
+     sem_destroy(&mesonero);
+     sem_destroy(&cliente);
 }
 
 int main()
 {
-    // Inicializar los semáforos
-    sem_init(&sem_cashier, 0, 1);
-    sem_init(&sem_rest, 0, 1);
-    for (int i = 0; i < MAX_TABLE; i++)
-    {
-        sem_init(&sem_table[i], 0, 1);
-    }
+     pthread_t mesonero_thread, cliente_thread;
+     semaphore_init();
 
-    // Crear los hilos de los supervisores
-    int sup_ids[MAX_SUPERVISOR] = {0, 1};
-    for (int i = 0; i < MAX_SUPERVISOR; i++)
-    {
-        pthread_create(&sup_tid[i], NULL, supervisorFuncion, &sup_ids[i]);
-    }
+     // Crear los hilos del mesonero y los clientes
+     pthread_create(&mesonero_thread, NULL, mesonero_func, 0);
+     pthread_create(&cliente_thread, NULL, cliente_func, NULL);
 
-    // Crear los hilos de los mesoneros
-    int waiter_ids[MAX_WAITER] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-    for (int i = 0; i < MAX_WAITER; i++)
-    {
-        pthread_create(&tid[i], NULL, mesoneroFuncion, &waiter_ids[i]);
-    }
+     // Esperar a que los hilos terminen
+     pthread_join(mesonero_thread, NULL);
+     pthread_join(cliente_thread, NULL);
 
-    // Simular la llegada de clientes a las mesas del restaurante
-    // Crear el hilo de generación de pedidos
-    pthread_t gen_tid;
-    pthread_create(&gen_tid, NULL, generarPedidosFuncion, NULL);
+     semaphore_destroy();
 
-    // Mostrar resultados
-    printf("Resultados del turno:\n");
-    for (int i = 0; i < MAX_SUPERVISOR; i++)
-    {
-        printf("Supervisor %d: %d pedidos contabilizados.\n", i, supervisor[i].total_orders);
-    }
-    // Obtener el turno y mesonero con mayor número de pedidos
-    int max_orders = 0, max_waiter;
-    for (int i = 0; i < MAX_WAITER; i++)
-    {
-        if (waiter[i].total_orders > max_orders)
-        {
-            max_orders = waiter[i].total_orders;
-            max_waiter = i;
-            showResults(max_waiter);
-        }
-    }
+     return 0;
 }

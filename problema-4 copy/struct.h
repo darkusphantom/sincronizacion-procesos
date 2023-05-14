@@ -12,9 +12,9 @@ typedef struct
 typedef struct
 {
     int id;
-    int in_cashbox;     // Indica si el mesonero está en el área de caja (1 = Sí, 0 = No)
-    int total_orders;   // Número total de pedidos atendidos
-    int orders_claimed; // Número de pedidos cobrado
+    int in_cashbox;           // Indica si el mesonero está en el área de caja (1 = Sí, 0 = No)
+    int total_orders_attend;  // Número total de pedidos atendidos
+    int total_orders_claimed; // Número de pedidos cobrado
     int total_rests;          // Número de descansos
 } Waiter;
 
