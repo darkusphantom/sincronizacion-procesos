@@ -8,7 +8,7 @@
 
 // Definición de variables globales
 Order orders[100];                     // Array con los pedidos del restaurante
-Waiter waiter[MAX_WAITER];             // Array con los mesoneros del turno
+Waiter waiters[MAX_WAITER];             // Array con los mesoneros del turno
 Supervisor supervisor[MAX_SUPERVISOR]; // Array con los supervisores
 
 sem_t sem_table[MAX_TABLE]; // Array de semáforos correspondientes a las mesas
