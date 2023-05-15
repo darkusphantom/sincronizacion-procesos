@@ -24,12 +24,9 @@ int en_descanso = 0;                // Bandera que indica si el mesonero esta en
 
 void descanso_func(int id_waiter)
 {
-     if (en_descanso)
-     {
-          sleep(2);
-          en_descanso = 0;
-     }
-     return NULL;
+     sleep(2);
+     en_descanso = 0;
+     printf("El mesero %d volvió del descanso\n", id_waiter);
 }
 
 void *mesonero_func(void *arg)
@@ -38,7 +35,12 @@ void *mesonero_func(void *arg)
      int waiter_id = 0;
      int available_cash_box = 1;
 
-     while (available_cash_box)
+     if (en_descanso)
+     {
+          descanso_func(waiter_id);
+     }
+
+     while (available_cash_box && !en_descanso)
      {
           // Esperar a que llegue un cliente
           sem_wait(&cliente);
