@@ -5,6 +5,6 @@
 #define MAX_WAITER 10
 #define MAX_SUPERVISOR 2
 #define MAX_TABLE 20
-#define MAX_ORDERS 10
+#define MAX_ORDERS 5
 
 #endif // !CONST_H

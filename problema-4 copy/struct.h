@@ -1,7 +1,18 @@
 #ifndef STRUCT_H
 #define STRUCT_H
 
-// Definición de la estructura Order
+/**
+ * @brief Definición de la estructura Order
+ *
+ * @param id Identificador del mesonero.
+ * @param id Identificador de la mesa a la que esta atendiendo.
+ * @param en_caja Indica si el mesonero está en el área de caja (1 = Sí, 0 = No).
+ * @param en_descanso Indica si el mesonero está en descanso (1 = Sí, 0 = No).
+ * @param pedidos_atendidos Número total de pedidos atendidos.
+ * @param cobros_en_caja Número de pedidos cobrados.
+ * @param total_pedidos_atendidos Número total de pedidos atendidos.
+ * @param total_descansos Número de descansos.
+ */
 typedef struct
 {
     int id_table;  // Número de mesa del pedido
@@ -9,10 +20,36 @@ typedef struct
 } Order;
 
 /**
+ * @brief Estructura que representa a una mesa
+ *
+ * @param id Identificador de la mesa.
+ * @param disponible. Indica si el mesonero está en descanso (1 = Sí, 0 = No).
+ */
+typedef struct
+{
+    int id;
+    int disponible;
+} Table;
+
+/**
+ * @brief Estructura que representa a una planilla
+ *
+ * @param pedidos_contabilizados Número total de pedidos atendidos.
+ */
+typedef struct
+{
+    int pedidos_contabilizados;
+    int mayor_numero_pedidos;
+    int total_pedidos_por_mesoneros;
+    int total_cobros_por_mesoneros;
+    int mesonero_del_dia;
+} Spreadsheet;
+
+/**
  * @brief Estructura que representa a un mesonero.
  *
  * @param id Identificador del mesonero.
- * @param id Identificador de la mesa a la que esta atendiendo.
+ * @param id_mesa Identificador de la mesa a la que esta atendiendo.
  * @param en_caja Indica si el mesonero está en el área de caja (1 = Sí, 0 = No).
  * @param en_descanso Indica si el mesonero está en descanso (1 = Sí, 0 = No).
  * @param pedidos_atendidos Número total de pedidos atendidos.
@@ -41,19 +78,8 @@ typedef struct
 typedef struct
 {
     int id;
-    int total_orders; // Número total de pedidos contabilizados
-} Supervisor;
+    Spreadsheet spreadsheet; // Número total de pedidos contabilizados
 
-/**
- * @brief Estructura que representa a una mesa
- *
- * @param id Identificador de la mesa.
- * @param disponible. Indica si el mesonero está en descanso (1 = Sí, 0 = No).
- */
-typedef struct
-{
-    int id;
-    int disponible;
-} Table;
+} Supervisor;
 
 #endif // DEBUG
