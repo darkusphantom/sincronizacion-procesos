@@ -6,5 +6,6 @@
 #define MAX_SUPERVISOR 2
 #define MAX_TABLE 20
 #define MAX_ORDERS 5
+#define MAX_MESONERO_EN_CAJA 2
 
 #endif // !CONST_H

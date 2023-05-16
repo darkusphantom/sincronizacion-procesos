@@ -11,7 +11,6 @@ void waiter_init()
     for (int i = 0; i < MAX_WAITER; i++)
     {
         waiters[i].id = i;
-        waiters[i].en_caja = 0;
         waiters[i].en_descanso = 0;
         waiters[i].pedidos_atendidos = 0;
         waiters[i].cobros_en_caja = 0;
@@ -67,24 +66,13 @@ void attend_client()
 {
     // Esperar a que llegue un cliente
     sem_wait(&cliente);
-    // Tomar el mutex para acceder a las variables compartidas
-    sem_wait(&mutex);
-    // Incrementar el número de mesas disponibles
-    mesas_disponibles++;
-    // Liberar el mutex
-    sem_post(&mutex);
     // Despertar al cliente
     sem_post(&mesonero);
-
     printf("El mesonero está atendiendo al cliente en la mesa\n");
     printf("El mesonero terminó de atender al cliente en la mesa\n");
+    printf("El mesonero va a registrar el pedido en pantalla");
+    sem_wait(&caja);
     sleep(1);
-}
-
-// Registrar pedido en la pantalla
-void register_order()
-{
-    printf("El mesonero esta registrando el pedido en pantalla\n");
 }
 
 // Llevar el pedido a la mesa
