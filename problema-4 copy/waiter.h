@@ -77,8 +77,8 @@ void attend_client()
     sem_post(&mesonero);
 
     printf("El mesonero está atendiendo al cliente en la mesa\n");
-    sleep(1);
     printf("El mesonero terminó de atender al cliente en la mesa\n");
+    sleep(1);
 }
 
 // Registrar pedido en la pantalla

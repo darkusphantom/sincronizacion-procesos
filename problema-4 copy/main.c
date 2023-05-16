@@ -9,6 +9,7 @@
 #include "client.h"
 #include "supervisor.h"
 #include "waiter.h"
+#include "queue.h"
 
 // Cobrar en la caja
 void cash_in(int id)
@@ -73,6 +74,8 @@ void *mesonero_func(void *arg)
 
 int main()
 {
+     queue_init(&order);
+
      pthread_t mesonero_thread, cliente_thread, supervisor_thread;
      semaphore_init();
 

@@ -4,19 +4,13 @@
 /**
  * @brief Definición de la estructura Order
  *
- * @param id Identificador del mesonero.
- * @param id Identificador de la mesa a la que esta atendiendo.
- * @param en_caja Indica si el mesonero está en el área de caja (1 = Sí, 0 = No).
- * @param en_descanso Indica si el mesonero está en descanso (1 = Sí, 0 = No).
- * @param pedidos_atendidos Número total de pedidos atendidos.
- * @param cobros_en_caja Número de pedidos cobrados.
- * @param total_pedidos_atendidos Número total de pedidos atendidos.
- * @param total_descansos Número de descansos.
+ * @param id_table Identificador de la mesa donde se tomo el pedido.
+ * @param waiter_id Identificador del mesonero que atendió el pedido
  */
 typedef struct
 {
-    int id_table;  // Número de mesa del pedido
-    int waiter_id; // ID del mesonero que atendió el pedido
+    int id_table;
+    int id_waiter;
 } Order;
 
 /**

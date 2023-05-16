@@ -5,6 +5,7 @@
 #include <semaphore.h>
 #include "struct.h"
 #include "const.h"
+#include "queue.h"
 
 // Definición de variables globales
 // Order orders[100];                     // Array con los pedidos del restaurante
@@ -24,21 +25,23 @@
 
 // int numOrders = 0; // Número de pedidos registrados
 
-sem_t mutex;         // Semáforo binario para controlar el acceso a las variables compartidas
-sem_t mutex_pedidos; //
-sem_t mesonero;      // Semáforo binario para que el mesonero espere a que llegue un cliente
-sem_t cliente;       // Semáforo binario para que el cliente espere a que el mesonero lo atienda
-sem_t taquilla;      // Semáforo binario para la taquilla
-sem_t planilla;      // Semaforo para Planilla del supervisor para registrar cobros
-sem_t caja;          // Semaforo para Caja de cobro
-sem_t waiter_rest;   // Semaforo para el descanso del mesonero
-sem_t mutex_cobros;
+sem_t mutex;            // Semáforo binario para controlar el acceso a las variables compartidas
+sem_t mutex_pedidos;    //
+sem_t mutex_cobros;     //
+sem_t mesonero;         // Semáforo binario para que el mesonero espere a que llegue un cliente
+sem_t cliente;          // Semáforo binario para que el cliente espere a que el mesonero lo atienda
+sem_t taquilla;         // Semáforo binario para la taquilla
+sem_t planilla;         // Semaforo para Planilla del supervisor para registrar cobros
+sem_t caja;             // Semaforo para Caja de cobro
+sem_t waiter_rest;      // Semaforo para el descanso del mesonero
+sem_t sem_cola_pedidos; // Semaforo para la lista de pedidos
 
 int mesas_disponibles = MAX_TABLE; // Número de mesas disponibles
 int caja_disponible = 0;           // Bandera que indica si la caja está disponible
 
 Waiter waiters[MAX_WAITER];
 Supervisor supervisor[MAX_SUPERVISOR];
+Queue order; // Cola de pedidos
 
 // Inicializar los semáforos
 void semaphore_init()
@@ -50,6 +53,7 @@ void semaphore_init()
     // sem_init(&planilla, 0, 0);
     sem_init(&caja, 0, 1);
     sem_init(&mutex_cobros, 0, 0);
+    sem_init(&sem_cola_pedidos, 0, 0);
 }
 
 // Destruir los semáforos
@@ -63,5 +67,6 @@ void semaphore_destroy()
     sem_destroy(&caja);
     // sem_destroy(&waiter_rest);
     sem_destroy(&mutex_cobros);
+    sem_destroy(&sem_cola_pedidos);
 }
 #endif // !GLOBAL_H
