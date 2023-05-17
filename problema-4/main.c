@@ -9,13 +9,14 @@
 #include "client.h"
 #include "supervisor.h"
 #include "waiter.h"
-#include "queue.h"
+#include "caja.h"
 
 int main()
 {
      pthread_t mesonero_thread[MAX_WAITER];
      pthread_t cliente_thread[MAX_CLIENT];
-     // pthread_t monitor_thread;
+     pthread_t caja_thread[MAX_CAJA];
+     pthread_t taquilla_thread;
 
      // queue_init(&order);
 
@@ -24,20 +25,27 @@ int main()
 
      // supervisor_init();
 
-     // Crear los hilos del mesonero y los clientes
+     // Crear los hilos para clientes
      for (int i; i < MAX_TABLE; i++)
      {
           clients[i] = i;
           pthread_create(&cliente_thread[i], NULL, cliente_func, &clients[i]);
      }
 
+     // Crea hilos para mesoneros
      for (int i = 0; i < MAX_WAITER; i++)
      {
           waiter_init(i);
           pthread_create(&mesonero_thread[i], NULL, mesonero_func, &waiters[i].id);
      }
 
-     // pthread_create(&monitor_thread, NULL, monitor_func, NULL);
+     // Crea hilos para la caja
+     for (int i = 0; i < MAX_CAJA; i++)
+     {
+          pthread_create(&caja_thread[i], NULL, caja_func, NULL);
+     }
+
+     pthread_create(&taquilla_thread, NULL, taquilla_func, NULL);
 
      // for (int i = 0; i < MAX_SUPERVISOR; i++)
      // {
@@ -53,6 +61,11 @@ int main()
      for (int i = 0; i < MAX_CLIENT; i++)
      {
           pthread_join(cliente_thread[i], NULL);
+     }
+
+     for (int i = 0; i < MAX_PANTALLA; i++)
+     {
+          pthread_join(caja_thread[i], NULL);
      }
 
      // for (int i = 0; i < MAX_SUPERVISOR; i++)

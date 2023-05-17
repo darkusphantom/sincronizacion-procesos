@@ -29,8 +29,6 @@ void *cliente_func(void *arg)
             // No hay mesas disponibles
             printf("El cliente %d se fue porque no había mesas disponibles\n", id);
         }
-        // Liberar el mesa
-        sem_post(&mesa);
         // Esperar un tiempo aleatorio antes de llegar al siguiente cliente
         sleep(rand() % 5 + 1);
     }
@@ -39,8 +37,6 @@ void *cliente_func(void *arg)
 
 void liberar_mesa()
 {
-    // Tomar el mutex para acceder a las variables compartidas
-    sem_wait(&mesa);
     // Incrementar el número de mesas disponibles
     mesas_disponibles++;
     // Liberar el mesa

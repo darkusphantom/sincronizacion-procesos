@@ -37,27 +37,17 @@ void waiter_show_results(int id)
 }
 
 /**
- * @brief Funcion para devolver al mesonero al trabajo
- *
- * @param id Identificador del mesonero.
+ * @brief Funcion para el descanso del mesonero
  */
-void waiter_go_back_work(int id)
+void descansar_mesonero(int id)
 {
-    waiters[id].en_descanso = 0;
-    printf("El mesero %d volvió del descanso\n", id);
-}
-
-/**
- * @brief Funcion para enviar a descansar a un mesonero
- *
- * @param id Identificador del mesonero.
- */
-void waiter_go_rest(int id)
-{
-    printf("Mesonero %d se va a tomar un descanso\n", id);
-    waiters[id].en_descanso = 1;
-    waiters[id].total_descansos++;
-    sleep(3);
+    // Revisar si el mesonero ha atendido a 10 clientes
+    if (waiters[id].pedidos_atendidos % 10 == 0)
+    {
+        // Solicitar un descanso
+        sem_post(&descanso_mesonero);
+        sem_wait(&mesonero_en_descanso);
+    }
 }
 
 // Registra el pedido en pantalla
@@ -73,64 +63,34 @@ void *mesonero_func(void *arg)
 {
     // id del mesero
     int id = *(int *)arg;
+    int id_mesa;
+
+    sem_getvalue(&cliente, &id_mesa);
 
     // Indica si la caja esta disponible u ocupada (Disponible = 1, Ocupada = 0)
     int available_cash_box = 1;
 
-    // if (waiter_in_rest)
-    // {
-    //     waiter_go_back_work(waiters[waiter_actual].id);
-    // }
+    descansar_mesonero(id);
+
     while (available_cash_box)
     {
         // Esperar a que llegue un cliente
         sem_wait(&cliente);
         // Despertar al cliente
         sem_post(&mesonero);
-        printf("El mesonero %d está atendiendo al cliente en la mesa\n", id);
+        printf("El mesonero %d está atendiendo al cliente en la mesa %d\n", id, id_mesa);
         printf("El mesonero %d terminó de atender al cliente en la mesa\n", id);
 
         register_order(id);
 
-        sem_wait(&caja);
-        caja_disponible = 1;
-        mesoneros_en_caja++;
-        while (caja_disponible)
-        {
-
-            printf("Mesonero cobrando en caja\n");
-
-            // if (cobros_caja < MAX_ORDERS)
-            // {
-            //      printf("Mesonero %d cobrando en caja\n", id);
-            //      caja_disponible--;
-            // Cobrar en la caja
-
-            // // Incrementar el contador de pedidos atendidos y cobros en caja
-            // waiters[id].pedidos_atendidos++;
-            // waiters[id].cobros_en_caja++;
-            // // Avisar a un supervisor cada 10 pedidos
-            // if (cobros_caja % MAX_ORDERS == 0)
-            // {
-            //     supervisor_saved_order(id);
-            //     waiters[id].total_descansos++;
-            // }
-            //      sleep(2);
-            // }
-            // else
-            // {
-            // waiter_show_results(id);
-
-            // Si ya se han cobrado 10 pedidos, el mesonero debe tomar un descanso
-            //   waiter_go_rest(id);
-            //   }
-            // Liberar la caja
-            caja_disponible = 0;
-            mesoneros_en_caja--;
-            sem_post(&caja);
-        }
-
-        // send_order_to_client(waiter_actual);
+        // Esperar a que el pedido esté listo en la taquilla
+        printf("Esperando a que el pedido esté listo en la taquilla\n");
+        // Espera a la caja de cobro
+        sem_post(&caja);
+        // Llama al pedido
+        sem_wait(&pedido);
+        printf("Mesero %d esta llevando el pedido al cliente\n", id);
+        // Llevar el pedido a la mesa cuando esté listo en la taquilla
         liberar_mesa();
     }
 

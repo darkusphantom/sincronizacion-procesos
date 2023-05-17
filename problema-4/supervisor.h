@@ -19,23 +19,23 @@ void supervisor_init()
     }
 }
 
-void *supervisor_func(void *arg)
-{
-    int supervisor_id = *(int *)arg;
-    int mesonero_id = 0;
-    while (1)
-    {
-        sem_wait(&mutex_pedidos);
-        supervisor[supervisor_id].spreadsheet.pedidos_contabilizados++;
-        sem_post(&mutex_pedidos);
-        sem_wait(&mutex_cobros);
-        supervisor[supervisor_id].spreadsheet.total_cobros_por_mesoneros++;
-        sem_post(&mutex_cobros);
-        printf("Supervisor %d con datos del Mesonero %d:", supervisor_id, mesonero_id);
-        // printf(" - Pedidos: %d - Cobros: %d\n");
-    }
-    return NULL;
-}
+// void *supervisor_func(void *arg)
+// {
+//     int supervisor_id = *(int *)arg;
+//     int mesonero_id = 0;
+//     while (1)
+//     {
+//         sem_wait(&mutex_pedidos);
+//         supervisor[supervisor_id].spreadsheet.pedidos_contabilizados++;
+//         sem_post(&mutex_pedidos);
+//         sem_wait(&mutex_cobros);
+//         supervisor[supervisor_id].spreadsheet.total_cobros_por_mesoneros++;
+//         sem_post(&mutex_cobros);
+//         printf("Supervisor %d con datos del Mesonero %d:", supervisor_id, mesonero_id);
+//         // printf(" - Pedidos: %d - Cobros: %d\n");
+//     }
+//     return NULL;
+// }
 
 void supervisor_saved_order(int id)
 {
