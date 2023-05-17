@@ -7,24 +7,6 @@
 #include "const.h"
 #include "queue.h"
 
-// Definición de variables globales
-// Order orders[100];                     // Array con los pedidos del restaurante
-// Waiter waiters[MAX_WAITER];             // Array con los mesoneros del turno
-// Supervisor supervisor[MAX_SUPERVISOR]; // Array con los supervisores
-
-// sem_t sem_table[MAX_TABLE]; // Array de semáforos correspondientes a las mesas
-// sem_t sem_cashier;          // Semáforo correspondiente al cajero
-// sem_t sem_rest;             // Semáforo correspondiente a los descansos
-
-// pthread_mutex_t mutex_orders = PTHREAD_MUTEX_INITIALIZER;  // Mutex para proteger la variable numOrders
-// pthread_mutex_t mutex_cashbox = PTHREAD_MUTEX_INITIALIZER; // Mutex para proteger el área de caja
-
-// pthread_t tid[MAX_WAITER];         // Array con los hilos correspondientes a los mesoneros
-// pthread_t sup_tid[MAX_SUPERVISOR]; // Array con los hilos correspondientes a los supervisores
-// pthread_t cashier_tid;             // Hilo correspondiente al cajero
-
-// int numOrders = 0; // Número de pedidos registrados
-
 sem_t mutex;         // Semáforo binario para controlar el acceso a las variables compartidas
                      // Especificamente la mesa
 sem_t mutex_pedidos; //
@@ -39,7 +21,7 @@ sem_t waiter_rest;   // Semaforo para el descanso del mesonero
 
 int mesas_disponibles = MAX_TABLE; // Número de mesas disponibles
 int caja_disponible = 1;           // Bandera que indica si la caja está disponible
-int mesonero_en_caja = 0;          // Indica si el mesonero esta en caja. Será 1 si hay un mesonero en la caja y 0 si no lo hay.
+int mesoneros_en_caja = 0;          // Indica el numero de mesoneros en caja
 
 Waiter waiters[MAX_WAITER];
 Supervisor supervisor[MAX_SUPERVISOR];
@@ -49,12 +31,14 @@ Queue order; // Cola de pedidos
 void semaphore_init()
 {
     sem_init(&mutex, 0, 1);
-    sem_init(&mesonero, 0, 1);
+    sem_init(&mesonero, 0, MAX_WAITER);
     sem_init(&cliente, 0, 0);
+    // sem_init(&supervisor, 0 , MAX_SUPERVISOR);
     // sem_init(&taquilla, 0, 0);
     // sem_init(&planilla, 0, 0);
-    sem_init(&caja, 0, 1);
-    sem_init(&mutex_cobros, 0, 0);
+    sem_init(&caja, 0, 2);
+    // sem_init(&mutex_pedidos, 0, 1);
+    // sem_init(&mutex_cobros, 0, 0);
     // sem_init(&sem_cola_pedidos, 0, 0);
 }
 
@@ -67,8 +51,10 @@ void semaphore_destroy()
     // sem_destroy(&taquilla);
     sem_destroy(&planilla);
     sem_destroy(&caja);
+    // sem_destroy(&mutex_pedidos);
     // sem_destroy(&waiter_rest);
     sem_destroy(&mutex_cobros);
     // sem_destroy(&sem_cola_pedidos);
 }
+
 #endif // !GLOBAL_H

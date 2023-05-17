@@ -8,7 +8,7 @@ SRCS = main.c
 OBJS = $(SRCS:.c=.o)
 
 # Nombre del ejecutable
-TARGET = mi_programa
+TARGET = RUN
 
 all: $(TARGET)
 
