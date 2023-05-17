@@ -7,17 +7,15 @@
 #include "global.h"
 // #include "caja.h"
 
-void waiter_init()
+void waiter_init(int i)
 {
-    for (int i = 0; i < MAX_WAITER; i++)
-    {
+
         waiters[i].id = i;
         waiters[i].en_descanso = 0;
         waiters[i].pedidos_atendidos = 0;
         waiters[i].cobros_en_caja = 0;
         waiters[i].total_pedidos_atendidos = 0;
         waiters[i].total_descansos = 0;
-    }
 }
 
 // Muestra el resultado del turno actual
@@ -64,12 +62,8 @@ void waiter_go_rest(int id)
 
 void *mesonero_func(void *arg)
 {
-    // waiter actual es id del mesonero
-    int waiter_actual = *(int *)arg;
     // Indica si la caja esta disponible u ocupada (Disponible = 1, Ocupada = 0)
     int available_cash_box = 1;
-    // Descanso actual del mesero
-    int waiter_in_rest = waiters[waiter_actual].en_descanso;
 
     // if (waiter_in_rest)
     // {

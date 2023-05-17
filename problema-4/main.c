@@ -13,24 +13,29 @@
 
 int main()
 {
-     queue_init(&order);
-     pthread_t mesonero_thread, cliente_thread; // supervisor_thread;
+     pthread_t mesonero_thread[MAX_WAITER];
+     pthread_t cliente_thread[MAX_CLIENT];
+     // pthread_t monitor_thread;
+
+     // queue_init(&order);
 
      // Contiene el hilo para manejar la caja, la taquilla y los cobros
-     // pthread_t monitor_thread;
      semaphore_init();
 
-     waiter_init();
      // supervisor_init();
 
      // Crear los hilos del mesonero y los clientes
-     pthread_create(&cliente_thread, NULL, cliente_func, NULL);
+     for (int i; i < MAX_CLIENT; i++)
+     {
+          pthread_create(&cliente_thread[i], NULL, cliente_func, NULL);
+     }
 
      for (int i = 0; i < MAX_WAITER; i++)
      {
-          pthread_create(&mesonero_thread, NULL, mesonero_func, &i);
+          waiter_init(i);
+          pthread_create(&mesonero_thread[i], NULL, mesonero_func, &waiters[i].id);
      }
-     
+
      // pthread_create(&monitor_thread, NULL, monitor_func, NULL);
 
      // for (int i = 0; i < MAX_SUPERVISOR; i++)
@@ -39,9 +44,20 @@ int main()
      // }
 
      // Esperar a que los hilos terminen
-     pthread_join(mesonero_thread, NULL);
-     pthread_join(cliente_thread, NULL);
-     // pthread_join(supervisor_thread, NULL);
+     for (int i = 0; i < MAX_WAITER; i++)
+     {
+          pthread_join(mesonero_thread[i], NULL);
+     }
+
+     for (int i = 0; i < MAX_CLIENT; i++)
+     {
+          pthread_join(cliente_thread[i], NULL);
+     }
+
+     // for (int i = 0; i < MAX_SUPERVISOR; i++)
+     // {
+     //   pthread_join(supervisor_thread[i], NULL);
+     // }
 
      semaphore_destroy();
 

@@ -16,12 +16,12 @@ sem_t cliente;       // Semáforo binario para que el cliente espere a que el me
 sem_t taquilla;      // Semáforo binario para la taquilla
 sem_t planilla;      // Semaforo para Planilla del supervisor para registrar cobros
 sem_t caja;          // Semaforo para Caja de cobro
-sem_t waiter_rest;   // Semaforo para el descanso del mesonero
+sem_t pantalla;
 // sem_t sem_cola_pedidos; // Semaforo para la lista de pedidos
 
 int mesas_disponibles = MAX_TABLE; // Número de mesas disponibles
 int caja_disponible = 1;           // Bandera que indica si la caja está disponible
-int mesoneros_en_caja = 0;          // Indica el numero de mesoneros en caja
+int mesoneros_en_caja = 0;         // Indica el numero de mesoneros en caja
 
 Waiter waiters[MAX_WAITER];
 Supervisor supervisor[MAX_SUPERVISOR];
