@@ -10,12 +10,12 @@
 void waiter_init(int i)
 {
 
-        waiters[i].id = i;
-        waiters[i].en_descanso = 0;
-        waiters[i].pedidos_atendidos = 0;
-        waiters[i].cobros_en_caja = 0;
-        waiters[i].total_pedidos_atendidos = 0;
-        waiters[i].total_descansos = 0;
+    waiters[i].id = i;
+    waiters[i].en_descanso = 0;
+    waiters[i].pedidos_atendidos = 0;
+    waiters[i].cobros_en_caja = 0;
+    waiters[i].total_pedidos_atendidos = 0;
+    waiters[i].total_descansos = 0;
 }
 
 // Muestra el resultado del turno actual
@@ -60,8 +60,20 @@ void waiter_go_rest(int id)
     sleep(3);
 }
 
+// Registra el pedido en pantalla
+void register_order(int id)
+{
+    sem_wait(&pantalla);
+    printf("El mesonero %d esta anotando el pedido en pantalla.\n", id);
+    waiters[id].pedidos_atendidos++;
+    sem_post(&pantalla);
+}
+
 void *mesonero_func(void *arg)
 {
+    // id del mesero
+    int id = *(int *)arg;
+
     // Indica si la caja esta disponible u ocupada (Disponible = 1, Ocupada = 0)
     int available_cash_box = 1;
 
@@ -75,15 +87,17 @@ void *mesonero_func(void *arg)
         sem_wait(&cliente);
         // Despertar al cliente
         sem_post(&mesonero);
-        printf("El mesonero está atendiendo al cliente en la mesa\n");
-        printf("El mesonero terminó de atender al cliente en la mesa\n");
-        sleep(1);
+        printf("El mesonero %d está atendiendo al cliente en la mesa\n", id);
+        printf("El mesonero %d terminó de atender al cliente en la mesa\n", id);
+
+        register_order(id);
 
         sem_wait(&caja);
         caja_disponible = 1;
         mesoneros_en_caja++;
         while (caja_disponible)
         {
+
             printf("Mesonero cobrando en caja\n");
 
             // if (cobros_caja < MAX_ORDERS)

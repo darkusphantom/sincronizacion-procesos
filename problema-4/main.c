@@ -25,9 +25,10 @@ int main()
      // supervisor_init();
 
      // Crear los hilos del mesonero y los clientes
-     for (int i; i < MAX_CLIENT; i++)
+     for (int i; i < MAX_TABLE; i++)
      {
-          pthread_create(&cliente_thread[i], NULL, cliente_func, NULL);
+          clients[i] = i;
+          pthread_create(&cliente_thread[i], NULL, cliente_func, &clients[i]);
      }
 
      for (int i = 0; i < MAX_WAITER; i++)

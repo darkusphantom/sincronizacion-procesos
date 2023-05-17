@@ -7,11 +7,10 @@
 #include "const.h"
 #include "queue.h"
 
-sem_t mutex;         // Semáforo binario para controlar el acceso a las variables compartidas
-                     // Especificamente la mesa
 sem_t mutex_pedidos; //
 sem_t mutex_cobros;  //
 sem_t mesonero;      // Semáforo binario para que el mesonero espere a que llegue un cliente
+sem_t mesa;          // Semáforo binario para controlar las mesas disponibles
 sem_t cliente;       // Semáforo binario para que el cliente espere a que el mesonero lo atienda
 sem_t taquilla;      // Semáforo binario para la taquilla
 sem_t planilla;      // Semaforo para Planilla del supervisor para registrar cobros
@@ -23,14 +22,15 @@ int mesas_disponibles = MAX_TABLE; // Número de mesas disponibles
 int caja_disponible = 1;           // Bandera que indica si la caja está disponible
 int mesoneros_en_caja = 0;         // Indica el numero de mesoneros en caja
 
-Waiter waiters[MAX_WAITER];
-Supervisor supervisor[MAX_SUPERVISOR];
-Queue order; // Cola de pedidos
+Waiter waiters[MAX_WAITER];            // Lista de meseros
+Supervisor supervisor[MAX_SUPERVISOR]; // Lista de supervisores
+Queue order;                           // Cola de pedidos
+int clients[MAX_CLIENT];               // Lista de clientes
 
 // Inicializar los semáforos
 void semaphore_init()
 {
-    sem_init(&mutex, 0, 1);
+    sem_init(&mesa, 0, MAX_TABLE);
     sem_init(&mesonero, 0, MAX_WAITER);
     sem_init(&cliente, 0, 0);
     // sem_init(&supervisor, 0 , MAX_SUPERVISOR);
@@ -45,7 +45,7 @@ void semaphore_init()
 // Destruir los semáforos
 void semaphore_destroy()
 {
-    sem_destroy(&mutex);
+    sem_destroy(&mesa);
     sem_destroy(&mesonero);
     sem_destroy(&cliente);
     // sem_destroy(&taquilla);
